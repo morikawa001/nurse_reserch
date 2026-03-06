@@ -142,10 +142,8 @@
 
 <script>
   // ★ 新しいAPIキーをここに入力
-  const API_KEY = "A新しいAPIキーをここに入力";
-  const MODEL   = "gemini-2.5-flash-lite";
-  const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/"
-                + MODEL + ":streamGenerateContent?alt=sse&key=" + API_KEY;
+  // ★ GASのウェブアプリURLに変更（APIキーは不要）
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwFGWXonRPSDqhToxurlrxmvb0oMydOdM18_2Jy5aQWDXP60o6bKjkjYYfu741dgkqB/exec"; // ← STEPで取得したURLを貼る
 
   function getCheckedValues() {
     return Array.from(document.querySelectorAll('.checkbox-group input[type=checkbox]:checked'))
@@ -184,71 +182,33 @@
     const prompt = buildPrompt(theme, background, design, setting, focusAreas);
 
     try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.5,
-            topP: 0.9,
-            maxOutputTokens: 8192
-          }
-        })
-      });
+      cconst response = await fetch(GAS_URL, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.5, topP: 0.9, maxOutputTokens: 8192 }
+  })
+});
 
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error?.message || 'APIエラー: ' + response.status);
-      }
+  if (!response.ok) {
+  const err = await response.json();
+  throw new Error(err.error?.message || 'APIエラー: ' + response.status);
+}
 
-      // ストリーミング表示開始
-      result.style.display   = 'block';
-      streamRaw.style.display = 'block';
-      loading.style.display  = 'none';
-      result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+const data = await response.json();
+const fullText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-      let fullText = '';
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
+if (!fullText) throw new Error('レスポンスが空です。GASのデプロイ設定を確認してください。');
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop(); // 未完行はバッファに残す
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === '[DONE]') continue;
-          try {
-            const chunk = JSON.parse(jsonStr);
-            const delta = chunk?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (delta) {
-              fullText += delta;
-              // カーソル付きでリアルタイム表示
-              streamRaw.innerHTML = escapeHtml(fullText) + '<span class="cursor"></span>';
-              streamRaw.scrollTop = streamRaw.scrollHeight;
-            }
-            // 終了理由チェック
-            const finishReason = chunk?.candidates?.[0]?.finishReason;
-            if (finishReason && finishReason !== 'STOP' && finishReason !== '') {
-              console.warn('finishReason:', finishReason);
-            }
-          } catch(e) { /* パース失敗行はスキップ */ }
-        }
-      }
-
-      // 完了後：整形して表示
-      streamRaw.style.display = 'none';
-      resultContent.innerHTML = markdownToHtml(fullText);
-      resultContent.style.display = 'block';
-      statusBar.innerHTML = '<span class="status-done">✅ 出力完了（' + fullText.length + '文字）</span>';
-      copyBtn.style.display = 'inline-block';
+// 完了後：整形して表示
+loading.style.display   = 'none';
+result.style.display    = 'block';
+resultContent.innerHTML = markdownToHtml(fullText);
+resultContent.style.display = 'block';
+statusBar.innerHTML = '<span class="status-done">✅ 出力完了（' + fullText.length + '文字）</span>';
+copyBtn.style.display = 'inline-block';
+result.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     } catch (e) {
       loading.style.display  = 'none';
