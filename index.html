@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>看護研究アイデア ブラッシュアップAI</title>
+  <style>
+    :root {
+      --primary: #1a6b8a;
+      --primary-light: #e8f4f8;
+      --accent: #2eaad1;
+      --bg: #f4f7fa;
+      --card: #ffffff;
+      --text: #2d3748;
+      --muted: #718096;
+      --border: #e2e8f0;
+      --success: #38a169;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Hiragino Sans', 'Meiryo', 'Yu Gothic', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      padding: 24px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    header .icon { font-size: 2rem; }
+
+    header h1 { font-size: 1.4rem; font-weight: 700; }
+    header p { font-size: 0.85rem; opacity: 0.85; margin-top: 4px; }
+
+    .container {
+      max-width: 860px;
+      margin: 32px auto;
+      padding: 0 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      border: 1px solid var(--border);
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 6px;
+      margin-top: 14px;
+    }
+
+    label:first-of-type { margin-top: 0; }
+
+    input[type="text"], textarea, select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--bg);
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--accent);
+      background: white;
+    }
+
+    textarea { resize: vertical; min-height: 90px; }
+
+    .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .checkbox-group label {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 400;
+      color: var(--text);
+      cursor: pointer;
+      background: var(--primary-light);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.88rem;
+      transition: background 0.2s;
+    }
+
+    .checkbox-group label:hover { background: #cce9f5; }
+    .checkbox-group input[type="checkbox"] { accent-color: var(--primary); }
+
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary:hover { opacity: 0.92; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+    .loading {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 20px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .spinner {
+      width: 24px; height: 24px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #result {
+      display: none;
+    }
+
+    .result-content {
+      line-height: 1.75;
+      font-size: 0.95rem;
+    }
+
+    .result-content h3 {
+      color: var(--primary);
+      font-size: 1rem;
+      margin: 18px 0 8px;
+      padding-bottom: 4px;
+      border-bottom: 2px solid var(--primary-light);
+    }
+
+    .result-content p { margin-bottom: 8px; }
+
+    .result-content ul, .result-content ol {
+      padding-left: 20px;
+      margin-bottom: 8px;
+    }
+
+    .result-content li { margin-bottom: 4px; }
+
+    .result-content strong { color: var(--primary); }
+
+    .result-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 0.9rem;
+    }
+
+    .result-content th {
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 8px 12px;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+
+    .result-content td {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+    }
+
+    .result-content tr:nth-child(even) td { background: var(--bg); }
+
+    .copy-btn {
+      margin-top: 16px;
+      padding: 8px 18px;
+      background: var(--primary-light);
+      color: var(--primary);
+      border: 1.5px solid var(--primary);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .copy-btn:hover { background: #cce9f5; }
+
+    .error-box {
+      display: none;
+      background: #fff5f5;
+      border: 1.5px solid #fc8181;
+      border-radius: 8px;
+      padding: 14px;
+      color: #c53030;
+      font-size: 0.9rem;
+    }
+
+    .badge {
+      display: inline-block;
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+
+    @media (max-width: 600px) {
+      header { padding: 18px 16px; }
+      .card { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="icon">🏥</div>
+  <div>
+    <h1>看護研究アイデア ブラッシュアップAI</h1>
+    <p>Gemini AIがあなたの研究アイデアをPICO/PECOフレームワークで整理・改善提案します</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- 入力フォーム -->
+  <div class="card">
+    <h2>📝 研究アイデアを入力</h2>
+
+    <label>研究テーマ（キーワード） <span style="color:red">*</span></label>
+    <input type="text" id="theme" placeholder="例：術後患者の疼痛管理、認知症高齢者のせん妄予防" />
+
+    <label>研究背景・動機（任意）</label>
+    <textarea id="background" placeholder="例：病棟で術後せん妄の発生が多く、予防ケアの標準化が必要と感じている"></textarea>
+
+    <label>想定する研究デザイン（任意）</label>
+    <select id="design">
+      <option value="">─ 選択してください ─</option>
+      <option value="横断研究">横断研究（Cross-sectional study）</option>
+      <option value="縦断研究・コホート研究">縦断研究・コホート研究</option>
+      <option value="ケースコントロール研究">ケースコントロール研究</option>
+      <option value="ランダム化比較試験（RCT）">ランダム化比較試験（RCT）</option>
+      <option value="準実験研究">準実験研究</option>
+      <option value="質的研究">質的研究（インタビュー・グラウンデッドセオリー等）</option>
+      <option value="混合研究法">混合研究法（Mixed Methods）</option>
+      <option value="文献レビュー・系統的レビュー">文献レビュー・系統的レビュー</option>
+      <option value="未定">未定（AIに提案してほしい）</option>
+    </select>
+
+    <label>重点的に改善してほしい点（複数選択可）</label>
+    <div class="checkbox-group">
+      <label><input type="checkbox" value="PICO/PECOの整理"> PICO/PECOの整理</label>
+      <label><input type="checkbox" value="研究目的の明確化"> 研究目的の明確化</label>
+      <label><input type="checkbox" value="アウトカム指標の提案"> アウトカム指標の提案</label>
+      <label><input type="checkbox" value="倫理的配慮"> 倫理的配慮</label>
+      <label><input type="checkbox" value="研究デザインの適切性"> 研究デザインの適切性</label>
+      <label><input type="checkbox" value="先行研究との差別化"> 先行研究との差別化</label>
+      <label><input type="checkbox" value="データ収集方法"> データ収集方法</label>
+      <label><input type="checkbox" value="統計解析方法の提案"> 統計解析方法の提案</label>
+    </div>
+
+    <label style="margin-top:18px">研究対象施設・部署（任意）</label>
+    <input type="text" id="setting" placeholder="例：急性期病棟、外来化学療法室、ICU" />
+  </div>
+
+  <!-- ボタン -->
+  <button class="btn-primary" id="generateBtn" onclick="generate()">
+    ✨ AIでブラッシュアップする
+  </button>
+
+  <!-- ローディング -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    Gemini AIが分析中です。少々お待ちください...
+  </div>
+
+  <!-- エラー -->
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- 結果 -->
+  <div class="card" id="result">
+    <h2>🤖 AIによる改善提案 <span class="badge">Gemini</span></h2>
+    <div class="result-content" id="resultContent"></div>
+    <button class="copy-btn" onclick="copyResult()">📋 結果をコピー</button>
+  </div>
+
+</div>
+
+<script>
+  const API_KEY = "AIzaSyDtPE5Lkg223yazx3s8f2G1UTo75exPtks";
+  const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+
+  function getCheckedValues() {
+    return Array.from(document.querySelectorAll('.checkbox-group input[type="checkbox"]:checked'))
+      .map(cb => cb.value);
+  }
+
+  async function generate() {
+    const theme = document.getElementById('theme').value.trim();
+    if (!theme) {
+      alert('研究テーマを入力してください。');
+      return;
+    }
+
+    const background = document.getElementById('background').value.trim();
+    const design = document.getElementById('design').value;
+    const setting = document.getElementById('setting').value.trim();
+    const focusAreas = getCheckedValues();
+
+    const btn = document.getElementById('generateBtn');
+    const loading = document.getElementById('loading');
+    const result = document.getElementById('result');
+    const errorBox = document.getElementById('errorBox');
+
+    btn.disabled = true;
+    loading.style.display = 'flex';
+    result.style.display = 'none';
+    errorBox.style.display = 'none';
+
+    const prompt = buildPrompt(theme, background, design, setting, focusAreas);
+
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.7,
+            topP: 0.9,
+            maxOutputTokens: 2048
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error?.message || `APIエラー: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '結果を取得できませんでした。';
+
+      document.getElementById('resultContent').innerHTML = markdownToHtml(text);
+      result.style.display = 'block';
+      result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    } catch (e) {
+      errorBox.textContent = `エラーが発生しました: ${e.message}`;
+      errorBox.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      loading.style.display = 'none';
+    }
+  }
+
+  function buildPrompt(theme, background, design, setting, focusAreas) {
+    let prompt = `あなたは看護研究の専門家であり、看護師が研究を計画・実施するためのメンターです。
+以下の看護研究アイデアを、看護研究の方法論に基づいて詳細に分析・改善提案してください。
+
+## 入力情報
+- **研究テーマ:** ${theme}`;
+    if (background) prompt += `\n- **研究背景・動機:** ${background}`;
+    if (design) prompt += `\n- **想定研究デザイン:** ${design}`;
+    if (setting) prompt += `\n- **対象施設・部署:** ${setting}`;
+    if (focusAreas.length > 0) prompt += `\n- **重点改善項目:** ${focusAreas.join('、')}`;
+
+    prompt += `
+
+## 回答フォーマット（以下の見出しを使って日本語でMarkdown形式で回答してください）
+
+### 1. 研究テーマの評価
+このテーマの看護研究としての意義・独自性・実施可能性を簡潔に評価してください。
+
+### 2. PICO / PECO フレーム整理
+| 要素 | 内容 |
+|------|------|
+| P (Patient/Population) | |
+| I/E (Intervention/Exposure) | |
+| C (Comparison) | |
+| O (Outcome) | |
+
+### 3. 推奨研究デザイン
+最も適切な研究デザインとその理由、代替デザイン案も提示してください。
+
+### 4. アウトカム指標の提案
+主要アウトカム（Primary Outcome）と副次的アウトカム（Secondary Outcome）を具体的に提案してください。使用可能な尺度・評価ツールも挙げてください。
+
+### 5. データ収集方法
+具体的なデータ収集の手順・ツール（既存の尺度、観察記録、電子カルテ等）を提案してください。
+
+### 6. 統計解析方法
+研究デザインとアウトカムに応じた統計解析手法を提案してください（記述統計、t検定、ロジスティック回帰など）。
+
+### 7. 倫理的配慮
+この研究で特に留意すべき倫理的課題（インフォームドコンセント、個人情報保護、研究対象者への負担等）を挙げてください。
+
+### 8. 改善・強化ポイント
+研究計画をより洗練させるための具体的な提案を3〜5点箇条書きで挙げてください。
+
+### 9. 参考にすべき研究キーワード（文献検索用）
+PubMed・医中誌での文献検索に使える英語・日本語キーワードを各5〜8個提示してください。`;
+
+    return prompt;
+  }
+
+  function markdownToHtml(md) {
+    return md
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/^\| (.+) \|$/gm, (match) => {
+        const cells = match.split('|').filter(c => c.trim());
+        return '<tr>' + cells.map(c => `<td>${c.trim()}</td>`).join('') + '</tr>';
+      })
+      .replace(/(<tr>.*<\/tr>\n?)+/g, (match) => {
+        const rows = match.split('\n').filter(r => r.includes('<tr>'));
+        if (rows.length > 1) {
+          const header = rows[0].replace(/<td>/g, '<th>').replace(/<\/td>/g, '</th>');
+          const body = rows.slice(2).join('\n');
+          return `<table><thead>${header}</thead><tbody>${body}</tbody></table>`;
+        }
+        return `<table>${match}</table>`;
+      })
+      .replace(/^- (.+)$/gm, '<li>$1</li>')
+      .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>\n?)+/g, match => `<ul>${match}</ul>`)
+      .replace(/\n{2,}/g, '</p><p>')
+      .replace(/^(?!<[htup])/gm, '')
+      .replace(/(<p><\/p>)+/g, '');
+  }
+
+  function copyResult() {
+    const text = document.getElementById('resultContent').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('.copy-btn');
+      btn.textContent = '✅ コピーしました！';
+      setTimeout(() => btn.textContent = '📋 結果をコピー', 2000);
+    });
+  }
+
+  // Enterキーで送信
+  document.getElementById('theme').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') generate();
+  });
+</script>
+
+</body>
+</html>
